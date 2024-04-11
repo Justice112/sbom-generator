@@ -1,8 +1,5 @@
 import json
-import subprocess
-import os
-from  db.package_info_db_v2 import create_database
-from  db.package_info_db_v2 import get_package_info
+from src.db.package_info_db_v2 import create_database, get_package_info
 
 def get_default_pack(name, version=''):
     """
@@ -39,8 +36,6 @@ def build_package_info(name, package_data):
     dict: 构建的包信息字典
     """
     version = package_data.get('version', '')
-
-    # 获取特定版本的信息
     publish_time, author, dist_info, license = get_package_info(name, version) 
 
     peers = list(package_data.get('peerDependencies', {}).keys())
@@ -58,13 +53,23 @@ def build_package_info(name, package_data):
         'peerDependencies': peers,
     }
 
-    print(f"Built package info for {name}: {package_info}")
-    return package_info,peers
+    return package_info, peers
+def parse_package_lock(package_lock_path, max_count=0): 
+    """解析 package-lock.json 文件并构建包信息列表。
 
-def parse_package_lock(package_lock_path, MAX_COUNT=0): 
+    Args:
+        package_lock_path (str): package-lock.json 文件的路径。
+        max_count (int, optional): 解析的最大包数。默认为 0，表示解析全部。
+
+    Returns:
+        tuple: 一个元组，包含三个元素：
+            - pro_deps (list): 项目依赖的包列表。
+            - package_list (list): 构建的包信息列表。
+            - package_map (dict): 包名称到包数据的映射字典。
+    """
     create_database()
 
-    proDeps = []
+    pro_deps = []
     package_list = []
     peer_list = [] 
     package_map = {}
@@ -75,11 +80,11 @@ def parse_package_lock(package_lock_path, MAX_COUNT=0):
     count = 1
     for package_name, package_data in package_lock_data.get('packages', {}).items():
         if package_name == '':
-            proDeps = list(package_data.get('dependencies', {}).keys())
+            pro_deps = list(package_data.get('dependencies', {}).keys())
             continue
 
         name = package_name.replace('node_modules/', '')
-        isRoot =  True if name in proDeps else False
+        is_root = True if name in pro_deps else False
 
         if name not in package_map:
             package_map[name] = package_data
@@ -87,34 +92,35 @@ def parse_package_lock(package_lock_path, MAX_COUNT=0):
         if package_data.get('dev', False) is True:
             continue
 
-        if not isRoot:
+        if not is_root:
             continue
 
-        package_info,peers = build_package_info(name, package_data)
+        package_info, peers = build_package_info(name, package_data)
         if peers:
             peer_list.extend(peers)
 
         package_list.append(package_info)
 
         count += 1
-        if MAX_COUNT == 0:
+        if max_count == 0:
             continue
 
-        if count >= MAX_COUNT:
+        if count >= max_count:
             break
 
-    # 计算差异
-    diff_list = list(set(peer_list) - set(proDeps))
-    for diff in diff_list :
+    diff_list = list(set(peer_list) - set(pro_deps))
+    peers_not_exists = []
+    for diff in diff_list:
         package_data = package_map.get(diff, '')
         if package_data: 
-            package_info,_ = build_package_info(diff, package_data)
+            package_info, _ = build_package_info(diff, package_data)
+            package_list.append(package_info)
         else:
-            package_info = get_default_pack(diff, '')
+            peers_not_exists.append(diff)
 
-        package_list.append(package_info)
+    if len(peers_not_exists) > 0:
+        print(f"peers_not_exists: {','.join(peers_not_exists)}")
 
-    # 排序
     package_list = sorted(package_list, key=lambda x: x['name']) 
 
-    return proDeps, package_list, package_map
+    return pro_deps, package_list, package_map

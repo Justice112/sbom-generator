@@ -2,7 +2,7 @@ import subprocess
 import json
 import sqlite3
 from datetime import datetime
-DATABASE_PATH = 'db/packages_v2.db'
+DATABASE_PATH = 'src/db/packages_v2.db'
 
 def create_database(): 
     with sqlite3.connect(DATABASE_PATH) as conn:
