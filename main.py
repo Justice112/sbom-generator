@@ -115,6 +115,17 @@ package_lock_path, output_file_path = load_paths()
 package_lock_entry.insert(0, package_lock_path)
 output_file_entry.insert(0, output_file_path)
 
+
+def initialize():
+    # 检查并创建 db 目录
+    db_dir = 'db'
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+        print(f"已创建目录：{db_dir}")
+        
+# 执行初始化程序
+initialize()
+
 root.update_idletasks()
 center_window(root)
 root.mainloop()
