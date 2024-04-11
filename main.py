@@ -3,11 +3,14 @@ import json
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
+from datetime import datetime
+import hashlib
 
 from src.sbom_builder import process_build
 
 # 全局变量
 CONFIG_FILE = "config.txt"
+PASSWORD_FILE = "password.txt"
 
 def save_paths(package_lock_path, output_file_path):
     with open(CONFIG_FILE, "w") as f:
@@ -20,6 +23,44 @@ def load_paths():
             return package_lock_path, output_file_path
     except FileNotFoundError:
         return "", ""
+
+def load_password():
+    try:
+        with open(PASSWORD_FILE, "rb") as f:
+            hashed_password = f.readline().strip()
+            return hashed_password
+    except FileNotFoundError:
+        return ""
+
+def save_password(password):
+    with open(PASSWORD_FILE, "wb") as f:
+        f.write(password.encode())
+
+def generate_daily_password():
+    # 使用当前日期作为种子生成动态密码
+    today = datetime.today().strftime("%Y%m%d")
+    # 这里可以使用任何加密算法或哈希函数来生成动态密码
+    # 这里简单地将日期字符串进行反转作为动态密码
+    password = today[::-1]
+    return password.strip()
+
+def validate_password(password):
+    if validate_date():
+        return True
+    
+    daily_password = generate_daily_password()
+    
+    return daily_password==password 
+    
+
+def validate_date():
+    # 检查当前日期是否在2025年1月1日之前
+    today = datetime.today()
+    end_date = datetime(2025, 1, 1)
+    if today < end_date:
+        return True
+    
+    return False
 
 def validate_package_lock(package_lock_path):
     if not os.path.isfile(package_lock_path):
@@ -54,6 +95,16 @@ def save_and_open_file():
     if not validate_package_lock(package_lock_path):
         return
 
+    # 验证密码
+    password = password_entry.get()
+    if not validate_password(password):
+        messagebox.showerror("错误", "密码验证失败，请检查密码后重试！")
+        return
+    else:
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        save_password(hashed_password) 
+        print(f'今日密码已经保存')
+
     excel_file = process_build(package_lock_path, output_file)
 
     if not excel_file:
@@ -78,7 +129,6 @@ def browse_output_file():
     output_file_entry.delete(0, tk.END)
     output_file_entry.insert(0, filename)
     
-    
 def center_window(window):
     window.update_idletasks()
     width = window.winfo_width()
@@ -88,6 +138,30 @@ def center_window(window):
     x = (screen_width - width) // 2
     y = (screen_height - height) // 2
     window.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+    
+
+def initialize():
+    # 检查并创建 db 目录
+    db_dir = 'db'
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+        print(f"已创建目录：{db_dir}")
+
+def show_password_entry():
+    # 检查当前日期是否在2025年1月1日之前
+    today = datetime.today()
+    end_date = datetime(2025, 1, 1)
+    daily_password = generate_daily_password()
+    hashed_password = hashlib.sha256(daily_password.encode()).hexdigest()
+    local_password = load_password()
+    
+    print (f"{hashed_password} @ {local_password}")
+    if today < end_date or  hashed_password == local_password:
+        password_label.grid_forget() 
+        password_entry.grid_forget()
+    else:
+        password_label.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        password_entry.grid(row=2, column=1, padx=5, pady=5)
 
 # 创建主窗口
 root = tk.Tk()
@@ -107,22 +181,25 @@ output_file_entry.grid(row=1, column=1, padx=5, pady=5)
 output_file_browse_button = tk.Button(root, text="浏览", command=browse_output_file)
 output_file_browse_button.grid(row=1, column=2, padx=5, pady=5)
 
+password_label = tk.Label(root, text="密码：")
+password_label.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+password_entry = tk.Entry(root, show="*", width=50)
+password_entry.grid(row=2, column=1, padx=5, pady=5)
+
 save_button = tk.Button(root, text="生成并打开文件", command=save_and_open_file)
-save_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
+save_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+
+# 绑定回车键到按钮的点击事件
+root.bind('<Return>', lambda event=None: save_and_open_file())
 
 # 加载初始路径
 package_lock_path, output_file_path = load_paths()
 package_lock_entry.insert(0, package_lock_path)
 output_file_entry.insert(0, output_file_path)
 
+# 显示或隐藏密码框
+show_password_entry()
 
-def initialize():
-    # 检查并创建 db 目录
-    db_dir = 'db'
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir)
-        print(f"已创建目录：{db_dir}")
-        
 # 执行初始化程序
 initialize()
 
