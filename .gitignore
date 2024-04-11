@@ -26,3 +26,5 @@ build/
 _output/
 _trash/
 _try/
+
+config.txt

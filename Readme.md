@@ -43,3 +43,11 @@
 - 确保输入的 `package-lock.json` 文件路径正确，并且文件格式符合预期。
 - 如果程序报错或者无法生成 Excel 文件，请检查是否安装了正确的依赖库，并且检查 `package-lock.json` 文件是否包含了正确的数据。
 - 由于程序依赖于 `openpyxl` 库，因此请确保该库已正确安装。
+
+3.**打包程序**
+    你可以通过以下命令打包程序：
+
+    ```shell  
+        pyinstaller main.py --onefile --name=软件物料清单生成工具 --add-data="db/packages_v2.db;db/packages_v2.db"
+
+    ```

@@ -1,11 +1,47 @@
-
-
 import os
+import json
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox
 
-from src.sbom_builder import process_build 
+from src.sbom_builder import process_build
+
+# 全局变量
+CONFIG_FILE = "config.txt"
+
+def save_paths(package_lock_path, output_file_path):
+    with open(CONFIG_FILE, "w") as f:
+        f.write(f"{package_lock_path}\n{output_file_path}")
+
+def load_paths():
+    try:
+        with open(CONFIG_FILE, "r") as f:
+            package_lock_path, output_file_path = f.read().splitlines()
+            return package_lock_path, output_file_path
+    except FileNotFoundError:
+        return "", ""
+
+def validate_package_lock(package_lock_path):
+    if not os.path.isfile(package_lock_path):
+        messagebox.showerror("错误", "指定的 package-lock.json 文件路径无效，请重新选择！")
+        return False
+
+    # 判断文件是否为有效的 JSON 文件
+    try:
+        with open(package_lock_path, "r") as f:
+            json.load(f)
+    except json.JSONDecodeError:
+        messagebox.showerror("错误", "指定的 package-lock.json 文件不是有效的 JSON 文件，请重新选择！")
+        return False
+
+    # 判断文件是否存在 packages 字段
+    with open(package_lock_path, "r") as f:
+        data = json.load(f)
+        if "packages" not in data:
+            messagebox.showerror("错误", "指定的 package-lock.json 文件缺少 packages 字段，请重新选择！")
+            return False
+
+    return True
 
 def save_and_open_file():
     package_lock_path = package_lock_entry.get()
@@ -14,12 +50,18 @@ def save_and_open_file():
     if not package_lock_path or not output_file:
         messagebox.showerror("错误", "请输入 package-lock.json 文件路径和要保存的 Excel 文件路径及名称！")
         return
-
-    excel_file= process_build(package_lock_path, output_file) 
     
+    if not validate_package_lock(package_lock_path):
+        return
+
+    excel_file = process_build(package_lock_path, output_file)
+
     if not excel_file:
         messagebox.showerror("错误", "执行出错了，请查看输出信息")
         return
+
+    # 缓存用户选择的路径
+    save_paths(package_lock_path, output_file)
 
     # 提示用户是否打开文件
     open_file = messagebox.askyesno("提示", "APP_软件物料清单生成成功，是否要打开输出文件？")
@@ -35,13 +77,6 @@ def browse_output_file():
     filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     output_file_entry.delete(0, tk.END)
     output_file_entry.insert(0, filename)
-
-def set_initial_paths():
-    current_dir = os.getcwd()
-    package_lock_initial_path = os.path.join(current_dir,"files", "package-lock.json")
-    output_file_initial_path = os.path.join(current_dir, "_output", "MDIS-APP_软件物料清单.xlsx")
-    package_lock_entry.insert(0, package_lock_initial_path)
-    output_file_entry.insert(0, output_file_initial_path)
 
 # 创建主窗口
 root = tk.Tk()
@@ -65,7 +100,9 @@ output_file_browse_button.grid(row=1, column=2, padx=5, pady=5)
 save_button = tk.Button(root, text="生成并打开文件", command=save_and_open_file)
 save_button.grid(row=2, column=0, columnspan=2, padx=5, pady=5)
 
-# 设置初始路径
-set_initial_paths()
+# 加载初始路径
+package_lock_path, output_file_path = load_paths()
+package_lock_entry.insert(0, package_lock_path)
+output_file_entry.insert(0, output_file_path)
 
 root.mainloop()
