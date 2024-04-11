@@ -1,5 +1,5 @@
 import json
-from src.db.package_info_db_v2 import create_database, get_package_info
+from db.package_info_db_v2 import create_database, get_package_info
 
 def get_default_pack(name, version=''):
     """
@@ -54,6 +54,7 @@ def build_package_info(name, package_data):
     }
 
     return package_info, peers
+
 def parse_package_lock(package_lock_path, max_count=0): 
     """解析 package-lock.json 文件并构建包信息列表。
 

@@ -16,6 +16,10 @@ def save_and_open_file():
         return
 
     excel_file= process_build(package_lock_path, output_file) 
+    
+    if not excel_file:
+        messagebox.showerror("错误", "执行出错了，请查看输出信息")
+        return
 
     # 提示用户是否打开文件
     open_file = messagebox.askyesno("提示", "APP_软件物料清单生成成功，是否要打开输出文件？")

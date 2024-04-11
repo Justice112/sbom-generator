@@ -2,7 +2,7 @@ import subprocess
 import json
 import sqlite3
 from datetime import datetime
-DATABASE_PATH = 'src/db/packages_v2.db'
+DATABASE_PATH = 'db/packages_v2.db'
 
 def create_database(): 
     with sqlite3.connect(DATABASE_PATH) as conn:
@@ -41,6 +41,7 @@ def get_package_info(package_name, package_version):
     # 如果数据库中没有，则从 npm 获取
     command = f"npm view {package_name}@{package_version} time author maintainers _npmUser contributors dist license --json"
     try:
+        print(f"正在获取{package_name}@{package_version}信息...")
         output = subprocess.check_output(command, shell=True, text=True)
         package_info = json.loads(output)
         publish_time = package_info.get('time', {}).get(package_version)
@@ -50,6 +51,7 @@ def get_package_info(package_name, package_version):
         contributors = package_info.get('contributors', '')
         dist_info = package_info.get('dist', '')
         license = package_info.get('license', '')
+        print(f"{package_name}@{package_version} 信息获取完成")
         if publish_time is None:
             print(f"Package '{package_name}' version '{package_version}' publish time not found. command:{command}")
     except Exception as e:

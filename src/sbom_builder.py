@@ -121,11 +121,18 @@ def process_build(package_lock_path, output_file, max_count=0):
     """
     excel_file=''
     
+    if not os.path.exists(package_lock_path):
+        print(f"错误：文件 {package_lock_path} 不存在")
+        return excel_file
+    
+    if not os.path.exists(os.path.dirname(output_file)):
+        print(f"错误：输出目录 {os.path.dirname(output_file)} 不存在")
+        return excel_file
+    
     try:
         _, package_list, _ = parse_package_lock(package_lock_path, max_count)
         package_data = build_package_info(package_list)
         excel_data = prepare_data_for_excel(package_data)
-        print(f'excel_data {excel_data}')
         excel_file=write_data_to_excel(excel_data, output_file)
         print(f"APP_软件物料清单 已经保存至：{output_file}")
     except FileNotFoundError:
