@@ -3,7 +3,7 @@ from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
-from src.parser.package_lock_parser_v2 import parse_package_lock
+from parser.package_lock_parser import parse_package_lock
 
 def prepare_data_for_excel(data_list):
     """
@@ -76,6 +76,7 @@ def build_package_info(package_list):
     for package in package_list:
         name = package.get('name', '')
         author = package.get('author', '')
+        npmUser = package.get('npmUser', '')
 
         package_info = {
             'ID': id,
@@ -86,7 +87,7 @@ def build_package_info(package_list):
             'Hash of the Component (Optional)': package.get('shasum', '-'),
             'peerDependencies': package.get('peerDependencies', []),
             'Dependency Relationship':'',
-            'Author of SBOM Data': author,
+            'Author of SBOM Data': npmUser,
             'Timestamp': package.get('publishTime', '-'),
             'Software Category': 'OTS',
             'License Declared': package.get('license', '-'),
@@ -104,7 +105,7 @@ def build_package_info(package_list):
             new_deps.append(dep_map.get(dep, dep))
         pack_info['Dependency Relationship'] = ','.join(new_deps) 
     
-    # TODO 删除 中 peerDependencies 字段
+    # 删除 中 peerDependencies 字段
     for pack_info in package_data:
         del pack_info['peerDependencies']  # 删除 peerDependencies 字段
 

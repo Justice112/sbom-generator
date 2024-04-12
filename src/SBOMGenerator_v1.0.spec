@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('db/packages_v2.db', 'db/packages_v2.db')],
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -21,7 +21,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='软件物料清单生成工具',
+    name='SBOMGenerator_v1.0',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -34,4 +34,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['sbom.ico'],
 )

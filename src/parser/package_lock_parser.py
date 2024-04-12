@@ -1,5 +1,5 @@
 import json
-from db.package_info_db_v2 import create_database, get_package_info
+from db.npm_package_info_db import create_database, get_package_info
 
 def get_default_pack(name, version=''):
     """
@@ -17,12 +17,20 @@ def get_default_pack(name, version=''):
         'version': version,
         'publishTime': '',   
         'author': '',  
+        'npmUser': '',  
         'integrity': ' ',
         'shasum': ' ',
         'license': '',
-        'dependencies': '',
-        'peerDependencies': '', 
+        'dependencies': [],
+        'peerDependencies': [], 
     }
+    
+def get_valid_author(author, npm_user): 
+    valid_fields = [author, npm_user]
+    for field in valid_fields:
+        if field:
+            return field
+    return ''
 
 def build_package_info(name, package_data):
     """
@@ -36,16 +44,19 @@ def build_package_info(name, package_data):
     dict: 构建的包信息字典
     """
     version = package_data.get('version', '')
-    publish_time, author, dist_info, license = get_package_info(name, version) 
+    publish_time, author, npm_user,  dist_info, license = get_package_info(name, version) 
 
     peers = list(package_data.get('peerDependencies', {}).keys())
     deps = list(package_data.get('dependencies', {}).keys())
+    
+    validAuthor = get_valid_author(author,npm_user)
     
     package_info = { 
         'name': name,
         'version': version,
         'publishTime': publish_time,  
-        'author': author,   
+        'author': validAuthor,   
+        'npmUser': npm_user,   
         'integrity': dist_info.get('integrity', ''),
         'shasum': dist_info.get('shasum', ''),
         'license': license,
