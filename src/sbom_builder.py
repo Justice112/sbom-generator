@@ -135,7 +135,7 @@ def process_build(package_lock_path, output_file, max_count=0):
         package_data = build_package_info(package_list)
         excel_data = prepare_data_for_excel(package_data)
         excel_file=write_data_to_excel(excel_data, output_file)
-        print(f"APP_软件物料清单 已经保存至：{output_file}")
+        print(f"生成成功！")
     except FileNotFoundError:
         print(f"错误：找不到文件 {package_lock_path}")
     except Exception as e:

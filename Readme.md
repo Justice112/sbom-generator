@@ -48,6 +48,6 @@
     你可以通过以下命令打包程序：
 
     ```shell  
-        pyinstaller main.py --onefile --name=软件物料清单生成工具 --add-data="db/packages_v2.db;db/packages_v2.db"
+        pyinstaller main.py --onefile --name=SBOMGenerator_v1.0 --icon=sbom.ico
 
     ```
