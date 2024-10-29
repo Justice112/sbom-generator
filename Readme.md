@@ -7,15 +7,16 @@
 1. **安装依赖**：
 
    请确保已安装以下 Python 包：
+
    - `openpyxl`: 用于处理 Excel 文件。
-   - `pyInstaller`:  用于将 Python 程序打包成可执行文件。
+   - `pyInstaller`: 用于将 Python 程序打包成可执行文件。
 
    你可以通过以下命令安装依赖：
 
-    ```shell
-    pip install openpyxl
-    pip install pyInstaller
-    ```
+   ```shell
+   pip install openpyxl
+   pip install pyInstaller
+   ```
 
 2. **运行程序**：
 
@@ -32,7 +33,7 @@
 
 ## 贡献
 
-欢迎提出问题和改进建议！如果你发现了bug或者有新功能的想法，请提交一个issue或者发送一个Pull Request。
+欢迎提出问题和改进建议！如果你发现了 bug 或者有新功能的想法，请提交一个 issue 或者发送一个 Pull Request。
 
 ## 许可证
 
@@ -43,11 +44,11 @@
 - 确保输入的 `package-lock.json` 文件路径正确，并且文件格式符合预期。
 - 如果程序报错或者无法生成 Excel 文件，请检查是否安装了正确的依赖库，并且检查 `package-lock.json` 文件是否包含了正确的数据。
 - 由于程序依赖于 `openpyxl` 库，因此请确保该库已正确安装。
+- 激活虚拟环境：venv\Scripts\activate
 
-3.**打包程序**
-    你可以通过以下命令打包程序：
+  3.**打包程序**
+  你可以通过以下命令打包程序：
 
-    ```shell  
-        pyinstaller main.py --onefile --name=SBOMGenerator_v1.0 --icon=sbom.ico
-
-    ```
+      ```shell
+          pyinstaller main.py --onefile --name=SBOMGenerator_v2.0 --icon=sbom.ico
+      ```

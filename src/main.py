@@ -3,6 +3,8 @@ import json
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import messagebox 
+import logging
+logging.basicConfig(level=logging.ERROR)
 
 from config.path_config import save_paths,load_paths
 from sbom_builder import process_build
@@ -31,6 +33,7 @@ def validate_package_lock(package_lock_path):
 
 def save_and_open_file():
     package_lock_path = package_lock_entry.get()
+    retire_report_path = retire_report_file_entry.get()
     output_file = output_file_entry.get()
 
     if not package_lock_path or not output_file:
@@ -40,14 +43,14 @@ def save_and_open_file():
     if not validate_package_lock(package_lock_path):
         return
 
-    excel_file = process_build(package_lock_path, output_file)
+    excel_file = process_build(package_lock_path, retire_report_path, output_file)
 
     if not excel_file:
         messagebox.showerror("错误", "生成失败，请查看错误日志！")
         return
 
     # 缓存用户选择的路径
-    save_paths(package_lock_path, output_file)
+    save_paths(package_lock_path, retire_report_path, output_file)
 
     # 提示用户是否打开文件
     open_file = messagebox.askyesno("提示", "生成成功，是否要打开文件？")
@@ -58,6 +61,11 @@ def browse_package_lock():
     filename = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
     package_lock_entry.delete(0, tk.END)
     package_lock_entry.insert(0, filename)
+
+def browse_retire_report():
+    filename = filedialog.askopenfilename(filetypes=[("JSON files", "*.json")])
+    retire_report_file_entry.delete(0, tk.END)
+    retire_report_file_entry.insert(0, filename)
 
 def browse_output_file():
     filename = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
@@ -74,35 +82,50 @@ def center_window(window):
     y = (screen_height - height) // 2
     window.geometry('{}x{}+{}+{}'.format(width, height, x, y))
         
-# 创建主窗口S
-root = tk.Tk()
-root.title("软件物料清单生成工具_V1 @JADE")
 
-package_lock_label = tk.Label(root, text="package-lock.json 文件路径：")
-package_lock_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-package_lock_entry = tk.Entry(root, width=50)
-package_lock_entry.grid(row=0, column=1, padx=5, pady=5)
-package_lock_browse_button = tk.Button(root, text="浏览", command=browse_package_lock)
-package_lock_browse_button.grid(row=0, column=2, padx=5, pady=5)
+try:
+    # 主要逻辑
+    # 创建主窗口S
+    root = tk.Tk()
+    root.title("软件物料清单生成工具_V2 @JADE")
 
-output_file_label = tk.Label(root, text="Excel 文件路径及名称：")
-output_file_label.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-output_file_entry = tk.Entry(root, width=50)
-output_file_entry.grid(row=1, column=1, padx=5, pady=5)
-output_file_browse_button = tk.Button(root, text="浏览", command=browse_output_file)
-output_file_browse_button.grid(row=1, column=2, padx=5, pady=5) 
+    package_lock_label = tk.Label(root, text="package-lock.json 文件路径：")
+    package_lock_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+    package_lock_entry = tk.Entry(root, width=50)
+    package_lock_entry.grid(row=0, column=1, padx=5, pady=5)
+    package_lock_browse_button = tk.Button(root, text="浏览", command=browse_package_lock)
+    package_lock_browse_button.grid(row=0, column=2, padx=5, pady=5)
 
-save_button = tk.Button(root, text="生成并打开文件", command=save_and_open_file)
-save_button.grid(row=3, column=0, columnspan=2, padx=5, pady=5)
+    retire_report_file_label = tk.Label(root, text="Retire Report 文件路径及名称：")
+    retire_report_file_label.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+    retire_report_file_entry = tk.Entry(root, width=50)
+    retire_report_file_entry.grid(row=1, column=1, padx=5, pady=5)
+    retire_report_file_browse_button = tk.Button(root, text="浏览", command=browse_retire_report)
+    retire_report_file_browse_button.grid(row=1, column=2, padx=5, pady=5) 
 
-# 绑定回车键到按钮的点击事件
-root.bind('<Return>', lambda event=None: save_and_open_file())
+    output_file_label = tk.Label(root, text="Excel 文件路径及名称：")
+    output_file_label.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+    output_file_entry = tk.Entry(root, width=50)
+    output_file_entry.grid(row=2, column=1, padx=5, pady=5)
+    output_file_browse_button = tk.Button(root, text="浏览", command=browse_output_file)
+    output_file_browse_button.grid(row=2, column=2, padx=5, pady=5) 
 
-# 加载初始路径
-package_lock_path, output_file_path = load_paths()
-package_lock_entry.insert(0, package_lock_path)
-output_file_entry.insert(0, output_file_path)
 
-root.update_idletasks()
-center_window(root)
-root.mainloop()
+    save_button = tk.Button(root, text="生成并打开文件", command=save_and_open_file)
+    save_button.grid(row=4, column=0, columnspan=2, padx=5, pady=5)
+
+    # 绑定回车键到按钮的点击事件
+    root.bind('<Return>', lambda event=None: save_and_open_file())
+
+    # 加载初始路径
+    package_lock_path, retire_report_path, output_file_path = load_paths()
+    package_lock_entry.insert(0, package_lock_path)
+    retire_report_file_entry.insert(0, retire_report_path)
+    output_file_entry.insert(0, output_file_path)
+
+    root.update_idletasks()
+    center_window(root)
+    root.mainloop()
+except Exception as e:
+    logging.error(f"发生未处理异常: {e}")
+    messagebox.showerror("错误", "发生未处理异常，请查看日志！")

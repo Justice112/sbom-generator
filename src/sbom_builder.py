@@ -4,6 +4,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 from parser.package_lock_parser import parse_package_lock
+from parser.retire_report_parser import parse_retire_report
 
 def prepare_data_for_excel(data_list):
     """
@@ -14,7 +15,7 @@ def prepare_data_for_excel(data_list):
 
     Returns:
         list: 准备好的数据列表，用于写入 Excel。
-    """
+    """  
     if not data_list:
         raise ValueError("数据列表为空，无法准备数据写入 Excel。")
 
@@ -68,7 +69,7 @@ def add_timestamp_to_filename(output_file):
     file_name, extension = os.path.splitext(output_file)
     return f"{file_name}_{timestamp}{extension}"
 
-def build_package_info(package_list):
+def build_package_info(package_list,df):
     package_data = []
     id = 1
     dep_map = {}
@@ -76,7 +77,7 @@ def build_package_info(package_list):
     for package in package_list:
         name = package.get('name', '')
         author = package.get('author', '')
-        npmUser = package.get('npmUser', '')
+        npmUser = package.get('npmUser', '') 
 
         package_info = {
             'ID': id,
@@ -91,10 +92,28 @@ def build_package_info(package_list):
             'Timestamp': package.get('publishTime', '-'),
             'Software Category': 'OTS',
             'License Declared': package.get('license', '-'),
-            'Comment': ''
+            'Comment': '', 
         }
 
-        package_data.append(package_info)
+        package_vf = df.get(name, {'Vulnerable': False,'Acceptable':'Yes','Vulnerability Details':'','CVE': '',
+                    'CWE': '',
+                    'Severity': '',
+                    'Recommend Version':'',
+                    "Reason for Acceptability":''})
+
+        # 确保 package_vf 是一个字典
+        if isinstance(package_vf, dict):
+            merged_info = package_info | package_vf  # 使用字典合并
+        else:
+            # 处理 package_vf 为列表的情况
+            merged_info = package_info  # 只使用 package_info
+            if isinstance(package_vf, list):
+                # 这里可以处理列表，例如将每个字典合并到 merged_info
+                for item in package_vf:
+                    if isinstance(item, dict):
+                        merged_info = {**merged_info, **item}  # 合并字典
+
+        package_data.append(merged_info)
         if name not in dep_map:
             dep_map[name] = f'include in id#{id}'
         id += 1
@@ -111,7 +130,7 @@ def build_package_info(package_list):
 
     return package_data
 
-def process_build(package_lock_path, output_file, max_count=0):
+def process_build(package_lock_path, retire_report_path, output_file, max_count=0):
     """
     处理构建流程，生成软件物料清单 Excel 文件。
 
@@ -120,10 +139,14 @@ def process_build(package_lock_path, output_file, max_count=0):
         output_file (str): Excel 文件保存路径及名称。
         max_count (int, optional): 解析的最大包数。默认为 0，表示解析全部。
     """
-    excel_file=''
+    excel_file='' 
     
     if not os.path.exists(package_lock_path):
         print(f"错误：文件 {package_lock_path} 不存在")
+        return excel_file
+
+    if not os.path.exists(retire_report_path):
+        print(f"错误：文件 {retire_report_path} 不存在")
         return excel_file
     
     if not os.path.exists(os.path.dirname(output_file)):
@@ -132,7 +155,9 @@ def process_build(package_lock_path, output_file, max_count=0):
     
     try:
         _, package_list, _ = parse_package_lock(package_lock_path, max_count)
-        package_data = build_package_info(package_list)
+        df = parse_retire_report(retire_report_path)
+
+        package_data = build_package_info(package_list,df)
         excel_data = prepare_data_for_excel(package_data)
         excel_file=write_data_to_excel(excel_data, output_file)
         print(f"生成成功！")
